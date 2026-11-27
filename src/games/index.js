@@ -98,8 +98,9 @@ export const GAMES = [
 ];
 import { EXTRAS } from './extras.js';
 import { NEW_GAMES } from './catalog2.js';
+import { GAMES_41_60 } from './catalog3.js';
 for (const g of GAMES) Object.assign(g, EXTRAS[g.id] || {});
-GAMES.push(...NEW_GAMES);
+GAMES.push(...NEW_GAMES, ...GAMES_41_60);
 export const byId = (id) => GAMES.find((g) => g.id === id);
 export const CATS = [
   { id: 'all', label: 'Tous' },

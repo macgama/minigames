@@ -54,7 +54,7 @@ export default {
     const pick = (o) => {
       if (locked || !cur) return; locked = true; paintJoker();
       const sec = (performance.now() - t0) / 1000, ok = o === cur.ans;
-      cur.btns.forEach((b) => { if (b.textContent === cur.ans) b.style.background = 'var(--ok)'; else if (b.textContent === o) b.style.background = 'var(--bad)'; b.disabled = true; });
+      cur.btns.forEach((b) => { b.style.pointerEvents = 'none'; if (b.textContent === cur.ans) b.style.background = 'var(--ok)'; else if (b.textContent === o) b.style.background = 'var(--bad)'; else b.style.opacity = 0.45; });
       if (ok) {
         streak++; good++; if (sec < 3) fast++;
         const speed = Math.max(0, Math.round(((TIME - sec) / TIME) * 60)), mult = 1 + Math.min(streak, 5) * 0.1;

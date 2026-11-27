@@ -93,7 +93,7 @@ export default {
         streak = 0; lives--; gain = -40 * bet; sfx.bad(); vibrate([40, 30, 40]); ctx.shake(6);
       }
       score = Math.max(0, score + gain);
-      [...choices.children].forEach((b) => { b.disabled = true; if (b.textContent === name) b.style.background = 'rgba(61,220,151,.35)'; });
+      [...choices.children].forEach((b) => { b.style.pointerEvents = 'none'; if (b.textContent === name) b.style.background = 'rgba(61,220,151,.45)'; else b.style.opacity = 0.45; });
       if (btn && !ok) { btn.style.background = 'rgba(255,92,122,.35)'; btn.classList.add('anim-shake'); }
       info.replaceChildren(h('span', { style: { color: ok ? 'var(--ok)' : 'var(--bad)', fontSize: '20px', fontWeight: 800 } }, `${gain >= 0 ? '+' : ''}${gain} pts`), timeout ? ' · Trop tard ! −1 ❤️' : ok ? (streak > 1 ? ` · série de ${streak} 🔥` : '') : ' · −1 ❤️');
       hud(); round++; ctx.timeout(next, 1300);
