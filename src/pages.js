@@ -25,7 +25,7 @@ function gameCard(g, i) {
   return h('a.game-card', { href: `#/jeu/${g.id}`, style: { '--c1': g.c1, '--c2': g.c2, animationDelay: `${Math.min(i, 12) * 30}ms` } },
     h('div.game-art',
       h('span.num', String(g.num).padStart(2, '0')),
-      h('div.badges', g.premium === 'pass' && h('span.chip', '🎟️', h('span.lbl', ' Pass')), g.cat.includes('enligne') && h('span.chip', '🛰️', h('span.lbl', ' En ligne'))),
+      h('div.badges', g.isNew && h('span.chip', '✨', h('span.lbl', ' Nouveau')), g.premium === 'pass' && h('span.chip', '🎟️', h('span.lbl', ' Pass')), g.cat.includes('enligne') && h('span.chip', '🛰️', h('span.lbl', ' En ligne'))),
       h('span.emoji', { 'aria-hidden': 'true' }, g.emoji),
       bestMedal(g.id) > 0 && h('span.medal-mini', { title: 'Meilleure médaille' }, MEDALS[bestMedal(g.id) - 1].icon)),
     h('div.game-body',
@@ -37,9 +37,11 @@ export function home(root) {
   document.title = 'Minigames · Mini-jeux de 30 secondes · par Manigames';
   let cat = store.get('cat', 'all');
   const grid = h('div.games-grid');
+  const search = h('input.input', { type: 'search', placeholder: '🔎 Chercher un jeu', 'aria-label': 'Chercher un jeu', style: { maxWidth: '320px', marginBottom: '12px' }, oninput: () => paint() });
   const paint = () => {
-    const list = GAMES.filter((g) => cat === 'all' || g.cat.includes(cat));
-    grid.replaceChildren(...list.map(gameCard));
+    const q = search.value.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const list = GAMES.filter((g) => (cat === 'all' || (cat === 'new' ? g.isNew : g.cat.includes(cat))) && (!q || (g.title + ' ' + g.tagline).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(q)));
+    grid.replaceChildren(...(list.length ? list.map(gameCard) : [h('p.muted', 'Aucun jeu ne correspond.')]));
   };
   const filters = h('div.filters', { role: 'toolbar', 'aria-label': 'Filtrer les jeux' }, CATS.map((c) => h('button', {
     'aria-pressed': String(c.id === cat), onclick: (e) => { cat = c.id; store.set('cat', cat); [...filters.children].forEach((b) => b.setAttribute('aria-pressed', String(b === e.currentTarget))); paint(); },
@@ -50,11 +52,11 @@ export function home(root) {
     h('div.container',
       h('section.hero',
         h('h1', 'Des mini-jeux de ', h('span.grad-text', '30 secondes'), '.'),
-        h('p', 'Seul, à deux ou en soirée. Les 20 jeux sont gratuits, sans pub et sans compte.'),
+        h('p', `Seul, à deux ou en soirée. Les ${GAMES.length} jeux sont gratuits, sans pub et sans compte.`),
         h('div.btn-row',
           h('a.btn.btn-primary.btn-lg', { href: '#/jeu/daily-defi' }, `📅 Défi du jour #${dayNumber()}`),
           h('a.btn.btn-lg', { href: '#/jeu/mode-fete' }, '🎉 Mode Fête')),
-        h('div.hero-stats', h('div', h('b', '20'), 'mini-jeux gratuits'), h('div', h('b', '0'), 'publicité'), h('div', h('b', plays), plays > 1 ? 'parties jouées' : 'partie jouée'))),
+        h('div.hero-stats', h('div', h('b', String(GAMES.length)), 'mini-jeux gratuits'), h('div', h('b', '0'), 'publicité'), h('div', h('b', plays), plays > 1 ? 'parties jouées' : 'partie jouée'))),
       dashboard(),
       h('div.featured',
         h('a.feature-card', { href: '#/jeu/dix-secondes', style: { background: 'linear-gradient(135deg,#ffb547,#ff4f4f 70%)' } },
@@ -65,7 +67,7 @@ export function home(root) {
           h('span.big-emoji', '👑'), h('span.kicker', 'Battle royale'), h('h3', 'Tap Royale'), h('p', '100 joueurs, une épreuve toutes les 5 secondes. Un seul survivant.'))),
       h('section',
         h('div.section-head', h('h2', 'Tous les jeux')),
-        filters, grid),
+        search, filters, grid),
       h('section',
         h('div.section-head', h('h2', 'Aller plus loin'), h('p.muted', 'Zéro pub, pour toujours. Tous les jeux restent gratuits en ligne.')),
         offers()),
@@ -106,7 +108,7 @@ export function premiumPage(root) {
   clear(root).append(topbar(), h('div.container.page',
     h('a.back-link', { href: '#/', html: icon('back', 18) + ' Tous les jeux' }),
     h('h1', 'Jouer sans pub, ', h('span.grad-text', 'soutenir le projet')),
-    h('p.muted', { style: { marginBottom: '28px', maxWidth: '60ch' } }, 'Les 20 jeux restent gratuits en ligne. Deux options pour aller plus loin : l’abonnement Premium (jeu hors ligne, salons privés, stats…) pour les joueurs réguliers, et le Pass Soirée pour un soir de fête avec le Mode Fête multi-écrans. Prototype : les boutons activent l’offre en local, sans paiement.'),
+    h('p.muted', { style: { marginBottom: '28px', maxWidth: '60ch' } }, `Les ${GAMES.length} jeux restent gratuits en ligne. Deux options pour aller plus loin : l’abonnement Premium (jeu hors ligne, salons privés, stats…) pour les joueurs réguliers, et le Pass Soirée pour un soir de fête avec le Mode Fête multi-écrans. Prototype : les boutons activent l’offre en local, sans paiement.`),
     offers(),
     (isPremium() || hasPass()) && h('div.btn-row', { style: { marginTop: '24px', justifyContent: 'flex-start' } },
       h('button.btn.btn-sm', { onclick: () => { cancelPremium(); cancelPass(); toast('Offres réinitialisées'); route(); } }, 'Réinitialiser la démo'))));

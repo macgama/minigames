@@ -97,7 +97,8 @@ export const ACHIEVEMENTS = [
   { id: 'fifty', icon: '🏃', name: 'Accro', desc: 'Termine 50 parties' },
   { id: 'hundred', icon: '💯', name: 'Centurion', desc: 'Termine 100 parties' },
   { id: 'explorer', icon: '🧭', name: 'Explorateur·rice', desc: 'Essaie 10 jeux différents' },
-  { id: 'all20', icon: '🗺️', name: 'Tour complet', desc: 'Joue aux 20 jeux' },
+  { id: 'all20', icon: '🗺️', name: 'Grand voyageur', desc: 'Joue à 20 jeux différents' },
+  { id: 'all40', icon: '🌍', name: 'Tour complet', desc: 'Joue aux 40 jeux' },
   { id: 'gold1', icon: '🥇', name: 'Premier or', desc: 'Décroche une médaille d’or' },
   { id: 'gold5', icon: '🏅', name: 'Collection dorée', desc: 'Décroche 5 médailles d’or' },
   { id: 'plat1', icon: '💎', name: 'Platine !', desc: 'Décroche une médaille de platine' },
@@ -178,6 +179,7 @@ export function recordGame(meta, res, games) {
   if (tg >= 100) unlock('hundred', out.achievements);
   if (totals.played.length >= 10) unlock('explorer', out.achievements);
   if (totals.played.length >= 20) unlock('all20', out.achievements);
+  if (totals.played.length >= 40) unlock('all40', out.achievements);
   if (totals.multi >= 5) unlock('party', out.achievements);
   if (st.n >= 3) unlock('streak3', out.achievements);
   if (st.n >= 7) unlock('streak7', out.achievements);
