@@ -23,7 +23,7 @@ export function mountGame(root, meta) {
       h('button.btn.btn-icon.btn-ghost', { 'aria-label': 'Règles', html: icon('help'), onclick: () => { stop(); intro(); } })),
     stage);
   clear(root).append(shell);
-  document.title = `${meta.title} · Manigames`;
+  document.title = `${meta.title} · Minigames`;
 
   function stop() { cleanups.forEach((f) => { try { f(); } catch (e) { console.error(e); } }); cleanups = []; hudEl.replaceChildren(); clear(stage); }
 

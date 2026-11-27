@@ -4,6 +4,7 @@ import { byId } from './games/index.js';
 import { mountGame } from './shell.js';
 import { home, premiumPage, statsPage, setRerender } from './pages.js';
 import { setupPWA, installPrompt } from './pwa.js';
+import { isPremium } from './core/premium.js';
 
 const root = document.getElementById('app');
 let unmount = null;
@@ -22,5 +23,5 @@ function route() {
 setRerender(route);
 addEventListener('hashchange', route);
 installPrompt.onChange(() => { if (!location.hash.startsWith('#/jeu')) route(); });
-setupPWA();
+setupPWA(isPremium);
 route();

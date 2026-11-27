@@ -11,7 +11,7 @@ import { installPrompt } from './pwa.js';
 function topbar() {
   const prem = isPremium();
   return h('header.topbar', h('div.container',
-    h('a.logo', { href: '#/' }, h('span.logo-mark', { html: icon('logo') }), h('span.name', 'Manigames')),
+    h('a.logo', { href: '#/' }, h('span.logo-mark', { html: icon('logo') }), h('span.name', 'Minigames', h('small.by', 'par Manigames'))),
     h('div.spacer'),
     installPrompt.available() && h('button.btn.btn-sm.hide-sm', { onclick: () => installPrompt.prompt(), html: icon('download', 18) + ' Installer' }),
     h('a.btn.btn-sm.btn-ghost', { href: '#/stats', html: icon('chart', 18) + '<span class="hide-sm">Stats</span>', 'aria-label': 'Statistiques' }),
@@ -31,7 +31,7 @@ function gameCard(g, i) {
 }
 
 export function home(root) {
-  document.title = 'Manigames · Mini-jeux de 30 secondes';
+  document.title = 'Minigames · Mini-jeux de 30 secondes · par Manigames';
   let cat = store.get('cat', 'all');
   const grid = h('div.games-grid');
   const paint = () => {
@@ -47,11 +47,11 @@ export function home(root) {
     h('div.container',
       h('section.hero',
         h('h1', 'Des mini-jeux de ', h('span.grad-text', '30 secondes'), '.'),
-        h('p', 'Seul, à deux ou en soirée. Sans pub, sans compte, et ça marche même hors ligne.'),
+        h('p', 'Seul, à deux ou en soirée. Les 20 jeux sont gratuits, sans pub et sans compte.'),
         h('div.btn-row',
           h('a.btn.btn-primary.btn-lg', { href: '#/jeu/daily-defi' }, `📅 Défi du jour #${dayNumber()}`),
           h('a.btn.btn-lg', { href: '#/jeu/mode-fete' }, '🎉 Mode Fête')),
-        h('div.hero-stats', h('div', h('b', '20'), 'mini-jeux'), h('div', h('b', '0'), 'publicité'), h('div', h('b', plays), plays > 1 ? 'parties jouées' : 'partie jouée'))),
+        h('div.hero-stats', h('div', h('b', '20'), 'mini-jeux gratuits'), h('div', h('b', '0'), 'publicité'), h('div', h('b', plays), plays > 1 ? 'parties jouées' : 'partie jouée'))),
       h('div.featured',
         h('a.feature-card', { href: '#/jeu/dix-secondes', style: { background: 'linear-gradient(135deg,#ffb547,#ff4f4f 70%)' } },
           h('span.big-emoji', '⏱️'), h('span.kicker', 'Le plus partagé'), h('h3', '10 Secondes Pile'), h('p', 'Arrête le chrono à 10,00 s. Personne n’y arrive du premier coup.')),
@@ -63,9 +63,9 @@ export function home(root) {
         h('div.section-head', h('h2', 'Tous les jeux')),
         filters, grid),
       h('section',
-        h('div.section-head', h('h2', 'Soutenir Manigames'), h('p.muted', 'Zéro pub, pour toujours. Le jeu de base reste gratuit.')),
+        h('div.section-head', h('h2', 'Aller plus loin'), h('p.muted', 'Zéro pub, pour toujours. Tous les jeux restent gratuits en ligne.')),
         offers()),
-      h('footer.footer', h('p', 'Manigames · prototype · ', h('a', { href: '#/premium' }, 'Offres'), ' · ', h('a', { href: '#/stats' }, 'Statistiques')))));
+      h('footer.footer', h('p', 'Minigames, une plateforme Manigames · prototype · ', h('a', { href: '#/premium' }, 'Offres'), ' · ', h('a', { href: '#/stats' }, 'Statistiques')))));
   paint();
 }
 
@@ -98,18 +98,18 @@ let route = () => {};
 export const setRerender = (f) => { route = f; };
 
 export function premiumPage(root) {
-  document.title = 'Offres · Manigames';
+  document.title = 'Offres · Minigames';
   clear(root).append(topbar(), h('div.container.page',
     h('a.back-link', { href: '#/', html: icon('back', 18) + ' Tous les jeux' }),
     h('h1', 'Jouer sans pub, ', h('span.grad-text', 'soutenir le projet')),
-    h('p.muted', { style: { marginBottom: '28px', maxWidth: '60ch' } }, 'Les 20 jeux restent gratuits. Deux options pour aller plus loin : l’abonnement Premium pour les joueurs réguliers, et le Pass Soirée pour un soir de fête. Prototype : les boutons activent l’offre en local, sans paiement.'),
+    h('p.muted', { style: { marginBottom: '28px', maxWidth: '60ch' } }, 'Les 20 jeux restent gratuits en ligne. Deux options pour aller plus loin : l’abonnement Premium (jeu hors ligne, salons privés, stats…) pour les joueurs réguliers, et le Pass Soirée pour un soir de fête avec le Mode Fête multi-écrans. Prototype : les boutons activent l’offre en local, sans paiement.'),
     offers(),
     (isPremium() || hasPass()) && h('div.btn-row', { style: { marginTop: '24px', justifyContent: 'flex-start' } },
       h('button.btn.btn-sm', { onclick: () => { cancelPremium(); cancelPass(); toast('Offres réinitialisées'); route(); } }, 'Réinitialiser la démo'))));
 }
 
 export function statsPage(root) {
-  document.title = 'Statistiques · Manigames';
+  document.title = 'Statistiques · Minigames';
   const rows = GAMES.map((g) => ({ g, best: getBest(g.id), plays: store.get('plays:' + g.id, 0) }));
   const played = rows.filter((r) => r.plays);
   const total = rows.reduce((n, r) => n + r.plays, 0);

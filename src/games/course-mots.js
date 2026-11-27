@@ -5,7 +5,7 @@ import { rng } from '../core/rng.js';
 const PTS = { 3: 10, 4: 20, 5: 40, 6: 70, 7: 150 };
 const DURATION = 60;
 let dictP = null;
-const loadDict = () => (dictP ||= Promise.all([fetch('/data/mots.txt').then((r) => r.text()), fetch('/data/tirages.json').then((r) => r.json())]).then(([t, tirages]) => ({ words: new Set(t.split('\n')), tirages })));
+const loadDict = () => (dictP ||= Promise.all([fetch('data/mots.txt').then((r) => r.text()), fetch('data/tirages.json').then((r) => r.json())]).then(([t, tirages]) => ({ words: new Set(t.split('\n')), tirages })));
 const count = (w) => { const c = {}; for (const ch of w) c[ch] = (c[ch] || 0) + 1; return c; };
 const fits = (w, pool) => { const c = count(w); for (const k in c) if ((pool[k] || 0) < c[k]) return false; return true; };
 
