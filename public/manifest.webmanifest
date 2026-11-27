@@ -1,18 +1,18 @@
 {
-  "name": "Manigames · Mini-jeux",
-  "short_name": "Manigames",
-  "description": "20 mini-jeux de 30 secondes, sans pub, même hors ligne.",
+  "name": "Minigames par Manigames",
+  "short_name": "Minigames",
+  "description": "20 mini-jeux de 30 secondes, sans pub, gratuits et sans pub.",
   "lang": "fr",
-  "start_url": "/",
-  "scope": "/",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "orientation": "any",
   "background_color": "#0a0c16",
   "theme_color": "#0a0c16",
   "categories": ["games", "entertainment"],
   "icons": [
-    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
-    { "src": "/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }

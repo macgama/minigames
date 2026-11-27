@@ -3,7 +3,7 @@
 ## Aujourd’hui : 100 % statique
 
 - **Vite** + JavaScript sans framework : chaque jeu est un module chargé à la demande (le premier écran pèse ~45 ko gzip).
-- **PWA** : `vite.config.js` génère `dist/sw.js` avec la liste de tous les fichiers. Après une première visite en ligne, l’accueil et les 20 jeux fonctionnent sans réseau.
+- **PWA** : `vite.config.js` génère `dist/sw.js` avec la liste de tous les fichiers. Il n’est enregistré que pour les abonnés Premium (`src/pwa.js`) ; sinon il est désinstallé. Dans la vraie version, l’état Premium viendra du serveur.
 - **Données locales** (`localStorage`) : records, nombre de parties, défi du jour, fantôme de Gravité Folle, état Premium/Pass (simulé).
 - **Défi du jour** : le code est dérivé de la date (graine), donc identique pour tout le monde sans serveur.
 

@@ -1,6 +1,6 @@
 # Monétisation sans publicité
 
-Décision : **pas de pub**. Le jeu de base reste gratuit, deux offres payantes.
+Décision : **pas de pub**. Les 20 jeux sont gratuits en ligne pour tous (le Mode Fête multi-écrans demande le Pass Soirée ou Premium). Le jeu hors ligne est réservé à Premium. Prix validés le 27.11.2026.
 
 ## Manigames Premium (abonnement)
 

@@ -1,7 +1,7 @@
-# Manigames · 20 mini-jeux de 30 secondes
+# Minigames · 20 mini-jeux de 30 secondes (par Manigames)
 
 Plateforme web de mini-jeux rapides (30 s à 3 min), à jouer seul, à deux ou en soirée.
-Responsive (mobile, tablette, ordinateur), installable comme une appli (PWA) et **jouable hors ligne** après la première visite. Aucune publicité.
+Responsive (mobile, tablette, ordinateur), installable comme une appli (PWA). Les 20 jeux sont gratuits en ligne, sans publicité. Le **jeu hors ligne est réservé à Premium** : le service worker n'est installé que pour les abonnés.
 
 Cible : **minigames.manigames.online** (hébergement Infomaniak, fichiers statiques).
 
@@ -10,7 +10,7 @@ Cible : **minigames.manigames.online** (hébergement Infomaniak, fichiers statiq
 ```bash
 npm install
 npm run dev        # http://localhost:5173 (accessible aussi depuis le téléphone sur le même Wi-Fi)
-npm run build      # génère dist/ (site statique + service worker hors ligne)
+npm run build      # génère dist/ (site statique, chemins relatifs, + service worker pour le hors ligne Premium)
 npm run preview    # teste le build
 ```
 

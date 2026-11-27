@@ -26,7 +26,7 @@ export default {
     session ||= { room: Array.from({ length: 4 }, () => rng.pick('ABCDEFGHJKLMNPQRSTUVWXYZ'.split(''))).join(''), players: new Map() };
     const room = session.room;
     const net = transport(room); ctx.onCleanup(net.close);
-    const url = `${location.origin}/#/manette?room=${room}`;
+    const url = `${location.href.split('#')[0]}#/manette?room=${room}`;
     const players = session.players; // id -> {name,color,emoji,pos,local}
     let phase = 'lobby';
     const scene = h('div.center-stage', { style: { gap: '18px', overflowY: 'auto', justifyContent: 'flex-start', paddingTop: '20px' } }); ctx.stage.append(scene);
@@ -100,12 +100,12 @@ export function controller(root, params) {
   const id = 'c-' + Math.random().toString(36).slice(2, 8);
   const net = transport(room);
   let me = null;
-  document.title = 'Manette · Manigames';
+  document.title = 'Manette · Minigames';
   const wrap = h('div', { style: { position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '20px', padding: '20px', textAlign: 'center' } });
   clear(root).append(wrap);
   const join = () => {
     const input = h('input.input', { placeholder: 'Ton prénom', maxLength: 14, style: { textAlign: 'center', fontSize: '20px' } });
-    wrap.replaceChildren(h('div.logo', h('span.logo-mark', { html: icon('logo') }), 'Manigames'), h('h2', `Salon ${room || '????'}`), input,
+    wrap.replaceChildren(h('div.logo', h('span.logo-mark', { html: icon('logo') }), 'Minigames'), h('h2', `Salon ${room || '????'}`), input,
       h('button.btn.btn-primary.btn-lg.btn-block', { style: { maxWidth: '340px' }, onclick: () => { net.send({ type: 'join', id, name: input.value.trim() }); wrap.replaceChildren(h('p.muted', 'Connexion à l’écran…')); } }, 'Rejoindre'));
   };
   const pad = (msg) => {
