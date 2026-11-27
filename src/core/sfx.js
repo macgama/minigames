@@ -7,6 +7,8 @@ function ctx() {
   if (ac.state === 'suspended') ac.resume();
   return ac;
 }
+/** Contexte audio partagé (pour les jeux qui ont besoin du son lui-même). */
+export const audioCtx = () => ctx();
 export function tone(freq = 440, dur = 0.12, { type = 'sine', vol = 0.18, slide = 0, delay = 0 } = {}) {
   if (muted) return;
   const a = ctx(); if (!a) return;

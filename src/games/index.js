@@ -1,5 +1,5 @@
 /**
- * Catalogue des 20 mini-jeux.
+ * Catalogue des mini-jeux.
  * cat : solo | duel | fete | enligne — players : texte affiché — modes : choix proposés à l'intro.
  * online : ce qu'il faudrait côté serveur pour la vraie version en ligne (affiché en note).
  */
@@ -97,10 +97,14 @@ export const GAMES = [
     load: () => import('./mode-fete.js') },
 ];
 import { EXTRAS } from './extras.js';
+import { NEW_GAMES } from './catalog2.js';
+import { GAMES_41_60 } from './catalog3.js';
 for (const g of GAMES) Object.assign(g, EXTRAS[g.id] || {});
+GAMES.push(...NEW_GAMES, ...GAMES_41_60);
 export const byId = (id) => GAMES.find((g) => g.id === id);
 export const CATS = [
   { id: 'all', label: 'Tous' },
+  { id: 'new', label: '✨ Nouveaux' },
   { id: 'solo', label: 'Solo' },
   { id: 'duel', label: 'À deux' },
   { id: 'fete', label: 'En soirée' },
