@@ -1,0 +1,31 @@
+{
+  "name": "manigames",
+  "version": "0.1.0",
+  "description": "Manigames : 20 mini-jeux web (PWA)",
+  "scripts": {
+    "dev": "vite --host",
+    "build": "vite build",
+    "preview": "vite preview --host",
+    "words": "node scripts/build-words.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/macgama/minigames.git"
+  },
+  "license": "UNLICENSED",
+  "bugs": {
+    "url": "https://github.com/macgama/minigames/issues"
+  },
+  "homepage": "https://github.com/macgama/minigames#readme",
+  "devDependencies": {
+    "an-array-of-french-words": "^2.0.0",
+    "vite": "^6.4.6"
+  },
+  "dependencies": {
+    "@fontsource-variable/outfit": "^5.3.0",
+    "matter-js": "^0.20.0",
+    "qrcode-generator": "^2.0.4"
+  },
+  "private": true,
+  "type": "module"
+}

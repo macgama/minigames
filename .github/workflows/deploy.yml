@@ -1,0 +1,25 @@
+# Déploiement manuel vers Infomaniak (SFTP). Lancer depuis l'onglet Actions.
+# Secrets requis : INFOMANIAK_HOST, INFOMANIAK_USER, INFOMANIAK_PASSWORD, INFOMANIAK_PATH (dossier du site).
+name: Deploy (Infomaniak)
+on:
+  workflow_dispatch:
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Envoi SFTP
+        env:
+          HOST: ${{ secrets.INFOMANIAK_HOST }}
+          USER: ${{ secrets.INFOMANIAK_USER }}
+          PASS: ${{ secrets.INFOMANIAK_PASSWORD }}
+          DEST: ${{ secrets.INFOMANIAK_PATH }}
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq lftp
+          lftp -u "$USER","$PASS" "sftp://$HOST" -e "set sftp:auto-confirm yes; mirror -R --delete --verbose dist/ $DEST; bye"
