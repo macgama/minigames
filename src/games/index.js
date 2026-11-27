@@ -96,6 +96,8 @@ export const GAMES = [
     online: 'Prototype : les manettes se connectent depuis d’autres onglets du même appareil. Entre vrais téléphones : relais WebRTC/WebSocket à ajouter.',
     load: () => import('./mode-fete.js') },
 ];
+import { EXTRAS } from './extras.js';
+for (const g of GAMES) Object.assign(g, EXTRAS[g.id] || {});
 export const byId = (id) => GAMES.find((g) => g.id === id);
 export const CATS = [
   { id: 'all', label: 'Tous' },

@@ -38,13 +38,10 @@ export default {
       net.send({ type: 'welcome', id, color: PCOLORS[i], emoji: PEMOJI[i], room });
       sfx.pop(); lobby();
     };
-    const tap = (id) => {
-      const p = players.get(id); if (!p || phase !== 'race') return;
-      p.pos = Math.min(GOAL, p.pos + 1); paintRace();
-      if (p.pos >= GOAL) finish(p);
-    };
-    net.on((m) => { if (m.type === 'join') addPlayer(m.id, m.name); if (m.type === 'leave') { players.delete(m.id); lobby(); } if (m.type === 'tap') tap(m.id); if (m.type === 'hello' && phase !== 'lobby') net.send({ type: 'state', phase }); });
-
+    let onTap = null; // gestionnaire de l'épreuve en cours
+    const tap = (id) => { const p = players.get(id); if (p && onTap) onTap(p); };
+    net.on((m) => { if (m.type === 'join') addPlayer(m.id, m.name); if (m.type === 'leave') { players.delete(m.id); lobby(); } if (m.type === 'tap') tap(m.id); if (m.type === 'hello' && phase !== 'lobby') net.send({ type: 'state', phase: 'pause', text: 'Partie en cours, regarde l’écran' }); });
+    const localPads = () => h('div', { style: { display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' } }, [...players.values()].filter((p) => p.local).map((p) => h('button.btn', { style: { minHeight: '60px', minWidth: '120px', borderColor: p.color, color: p.color }, onpointerdown: (e) => { e.preventDefault(); tap(p.id); } }, `${p.emoji} ${p.name}`)));
     function lobby() {
       if (phase !== 'lobby') return;
       const qr = qrcode(0, 'M'); qr.addData(url); qr.make();
@@ -61,34 +58,114 @@ export default {
             list.length ? h('div.players-list', list.map((p) => h('div.player-row.anim-pop', h('span', { style: { fontSize: '26px' } }, p.emoji), h('b', { style: { color: p.color, flex: 1 } }, p.name), h('span.chip', p.local ? 'sur cet écran' : '📱 manette'))))
               : h('p.muted', 'En attente des manettes… Scanne le QR code avec un téléphone, ou ajoute des joueurs sur cet écran pour tester.'),
             h('button.btn', { onclick: () => addPlayer('local-' + players.size, null, true), disabled: players.size >= 8 }, '+ Joueur sur cet écran'),
-            h('button.btn.btn-primary.btn-lg', { disabled: players.size < 1, onclick: race }, '🚀 Lancer la course'),
+            h('button.btn.btn-primary.btn-lg', { disabled: players.size < 1, onclick: () => soiree() }, '🎉 Lancer la soirée (3 épreuves)'),
+            h('button.btn', { disabled: players.size < 1, onclick: () => soiree(['race']) }, '🚀 Juste une course'),
             h('p.note', '🛰️ Prototype : les manettes se connectent depuis d’autres onglets de ce navigateur. Entre téléphones différents, il faudra le relais en ligne (WebSocket/WebRTC).'))));
     }
 
+    const GAMESET = {
+      race: { icon: '🚀', name: 'Course de fusées', how: `Tapez comme des fous. Premier à ${GOAL} !`, run: raceGame },
+      reflex: { icon: '⚡', name: 'Réflexe', how: 'Tapez dès que l’écran devient VERT. Trop tôt = grillé ! 3 manches.', run: reflexGame },
+      count: { icon: '🐑', name: 'Compte les moutons', how: 'Tapez une fois pour chaque 🐑 qui passe. Pas pour les 🐐 !', run: countGame },
+    };
+    const banner = (txt) => h('div.big-msg', { style: { textAlign: 'center' } }, txt);
+
+    async function soiree(order = ['race', 'reflex', 'count']) {
+      phase = 'play';
+      players.forEach((p) => (p.pts = 0));
+      for (let gi = 0; gi < order.length; gi++) {
+        const G = GAMESET[order[gi]];
+        net.send({ type: 'state', phase: 'pause', text: `${G.icon} ${G.name}` });
+        scene.replaceChildren(h('p.faint', order.length > 1 ? `Épreuve ${gi + 1} sur ${order.length}` : ''), h('div.anim-pop', { style: { fontSize: '90px' } }, G.icon), banner(G.name), h('p.muted', { style: { textAlign: 'center', maxWidth: '520px' } }, G.how));
+        sfx.go(); await ctx.wait(2600); if (!ctx.alive) return;
+        const order_ = await G.run(); if (!ctx.alive) return;
+        order_.forEach((p, k) => (p.pts += Math.max(0, 3 - k)));
+        net.send({ type: 'result', winner: order_[0].id, name: order_[0].name });
+        if (order.length > 1) {
+          scene.replaceChildren(banner(`${order_[0].emoji} ${order_[0].name} gagne l’épreuve !`), scoreTable(), h('p.faint', '1er +3 · 2e +2 · 3e +1'));
+          sfx.win(); await ctx.wait(3400); if (!ctx.alive) return;
+        }
+      }
+      phase = 'over'; onTap = null;
+      const final = [...players.values()].sort((a, b) => b.pts - a.pts);
+      const w = final[0];
+      net.send({ type: 'result', winner: w.id, name: w.name });
+      confetti();
+      ctx.end({ emoji: w.emoji, title: order.length > 1 ? `${w.name} est le roi de la soirée !` : `${w.name} gagne la course !`, display: '🏆', label: `${players.size} joueur${players.size > 1 ? 's' : ''} · aucune appli installée`, win: true, multi: true, extra: order.length > 1 ? scoreTable() : null });
+    }
+    function scoreTable() {
+      return h('div', { style: { display: 'grid', gap: '6px', width: '100%', maxWidth: '520px' } }, [...players.values()].sort((a, b) => b.pts - a.pts).map((p, i) => h('div', { style: { display: 'flex', justifyContent: 'space-between', padding: '10px 14px', borderRadius: '14px', background: i === 0 ? 'rgba(255,210,63,.14)' : 'rgba(255,255,255,.05)' } }, h('span', `${['🥇', '🥈', '🥉'][i] || i + 1 + '.'} ${p.emoji} ${p.name}`), h('b', `${p.pts} pts`))));
+    }
+
+    // 🚀 Course : premier à GOAL taps
     let raceEl;
-    async function race() {
-      phase = 'race-wait'; net.send({ type: 'state', phase: 'countdown' });
+    async function raceGame() {
       players.forEach((p) => (p.pos = 0));
+      const finished = [];
       raceEl = h('div', { style: { width: '100%', maxWidth: '1000px', display: 'grid', gap: '10px' } });
-      scene.replaceChildren(h('div.big-msg', `Tapez ! Premier à ${GOAL}`), raceEl);
-      paintRace();
-      await ctx.countdown(); if (!ctx.alive) return;
-      phase = 'race'; net.send({ type: 'state', phase: 'race' });
+      scene.replaceChildren(banner(`Tapez ! Premier à ${GOAL}`), raceEl, localPads());
+      paintRace(); net.send({ type: 'state', phase: 'countdown' });
+      await ctx.countdown(); if (!ctx.alive) return [];
+      net.send({ type: 'state', phase: 'play', label: '🚀 TAPE !' });
+      return new Promise((res) => {
+        onTap = (p) => { if (finished.includes(p)) return; p.pos = Math.min(GOAL, p.pos + 1); sfx.tick(); paintRace(); if (p.pos >= GOAL) { finished.push(p); if (finished.length === 1) { sfx.win(); ctx.timeout(done, 1500); } } };
+        const done = () => { onTap = null; const rest = [...players.values()].filter((p) => !finished.includes(p)).sort((a, b) => b.pos - a.pos); res([...finished, ...rest]); };
+      });
     }
     function paintRace() {
       if (!raceEl) return;
-      raceEl.replaceChildren(...[...players.values()].map((p, i) => h('div', { style: { display: 'grid', gridTemplateColumns: '110px 1fr', gap: '10px', alignItems: 'center' } },
+      raceEl.replaceChildren(...[...players.values()].map((p) => h('div', { style: { display: 'grid', gridTemplateColumns: '110px 1fr', gap: '10px', alignItems: 'center' } },
         h('b', { style: { color: p.color, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, `${p.emoji} ${p.name}`),
         h('div', { style: { position: 'relative', height: '54px', borderRadius: '16px', background: 'rgba(255,255,255,.06)', overflow: 'hidden' } },
           h('div', { style: { position: 'absolute', inset: '0 auto 0 0', width: `${(p.pos / GOAL) * 100}%`, background: `linear-gradient(90deg,transparent,${p.color}66)`, transition: 'width .08s' } }),
           h('span', { style: { position: 'absolute', top: '50%', left: `calc(${(p.pos / GOAL) * 100}% - ${(p.pos / GOAL) * 40}px)`, transform: 'translateY(-50%) rotate(45deg)', fontSize: '34px', transition: 'left .08s' } }, '🚀'),
-          h('span', { style: { position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', fontSize: '24px' } }, '🏁')),
-        p.local && h('button.btn', { style: { gridColumn: '1 / -1', minHeight: '56px', borderColor: p.color, color: p.color }, onpointerdown: (e) => { e.preventDefault(); tap(p.id); sfx.tick(); } }, `${p.emoji} Taper (${p.name})`))));
+          h('span', { style: { position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', fontSize: '24px' } }, '🏁')))));
     }
-    function finish(winner) {
-      phase = 'over'; net.send({ type: 'result', winner: winner.id, name: winner.name });
-      confetti();
-      ctx.end({ emoji: winner.emoji, title: `${winner.name} gagne la course !`, display: '🏆', label: `${players.size} joueur${players.size > 1 ? 's' : ''} · aucune appli installée`, win: true });
+
+    // ⚡ Réflexe : 3 manches, le premier à taper après le vert gagne la manche
+    async function reflexGame() {
+      const wins = new Map([...players.values()].map((p) => [p, 0]));
+      for (let r = 0; r < 3; r++) {
+        const burnt = new Set(); let green = false, winner = null;
+        const pad = h('div', { style: { width: 'min(90vw,640px)', height: 'min(46vh,360px)', borderRadius: '28px', background: '#ff3d5a', display: 'grid', placeItems: 'center', fontSize: '40px', fontWeight: 900, transition: 'background .05s' } }, 'Attendez…');
+        const info = h('p.muted', `Manche ${r + 1} sur 3`);
+        scene.replaceChildren(banner('⚡ Réflexe'), pad, info, localPads());
+        net.send({ type: 'state', phase: 'play', label: '⚡ Attends le VERT…' });
+        await new Promise((res) => {
+          onTap = (p) => {
+            if (winner || burnt.has(p)) return;
+            if (!green) { burnt.add(p); info.textContent = `${p.emoji} ${p.name} est grillé·e !`; sfx.bad(); if (burnt.size >= players.size) { winner = { none: true }; ctx.timeout(res, 1200); } return; }
+            winner = p; wins.set(p, wins.get(p) + 1); pad.textContent = `${p.emoji} ${p.name} !`; pad.style.background = p.color; sfx.ok(); ctx.timeout(res, 1500);
+          };
+          ctx.timeout(() => { if (winner) return; green = true; pad.style.background = '#2ecc71'; pad.textContent = 'MAINTENANT !'; sfx.go(); net.send({ type: 'state', phase: 'play', label: '⚡ TAPE !' }); }, 1800 + Math.random() * 3200);
+        });
+        onTap = null; if (!ctx.alive) return [];
+      }
+      return [...players.values()].sort((a, b) => wins.get(b) - wins.get(a));
+    }
+
+    // 🐑 Compte les moutons : un tap par mouton, les chèvres sont des pièges
+    async function countGame() {
+      const taps = new Map([...players.values()].map((p) => [p, 0]));
+      const field = h('div', { style: { position: 'relative', width: 'min(92vw,800px)', height: 'min(50vh,400px)', borderRadius: '28px', background: 'linear-gradient(#5ec576,#2f8f4e)', overflow: 'hidden' } });
+      scene.replaceChildren(banner('🐑 Comptez les moutons !'), field, localPads());
+      net.send({ type: 'state', phase: 'countdown' });
+      await ctx.countdown(); if (!ctx.alive) return [];
+      net.send({ type: 'state', phase: 'play', label: '🐑 Tape pour chaque mouton' });
+      onTap = (p) => { taps.set(p, taps.get(p) + 1); sfx.tick(); };
+      let sheep = 0; const total = 14 + Math.floor(Math.random() * 8);
+      for (let i = 0; i < total; i++) {
+        const goat = i > 2 && Math.random() < 0.3; if (!goat) sheep++;
+        const y = 10 + Math.random() * 70, dur = 1300 + Math.random() * 900;
+        const el = h('span', { style: { position: 'absolute', top: y + '%', left: '-12%', fontSize: '52px' } }, goat ? '🐐' : '🐑');
+        field.append(el); el.animate([{ left: '-12%' }, { left: '108%' }], { duration: dur, easing: 'linear' }).onfinish = () => el.remove();
+        await ctx.wait(300 + Math.random() * 650); if (!ctx.alive) return [];
+      }
+      await ctx.wait(2200); onTap = null; if (!ctx.alive) return [];
+      const order_ = [...players.values()].sort((a, b) => Math.abs(taps.get(a) - sheep) - Math.abs(taps.get(b) - sheep));
+      scene.replaceChildren(banner(`Il y avait ${sheep} moutons 🐑`), h('div', { style: { display: 'grid', gap: '6px', width: '100%', maxWidth: '460px' } }, order_.map((p) => h('div', { style: { display: 'flex', justifyContent: 'space-between', padding: '8px 12px', borderRadius: '12px', background: 'rgba(255,255,255,.05)' } }, h('span', `${p.emoji} ${p.name}`), h('b', `${taps.get(p)} ${taps.get(p) === sheep ? '🎯' : ''}`)))));
+      await ctx.wait(3200);
+      return order_;
     }
     lobby();
   },
@@ -111,14 +188,15 @@ export function controller(root, params) {
   const pad = (msg) => {
     const b = h('button', { style: { width: 'min(80vw,60vh)', aspectRatio: '1', borderRadius: '50%', border: 0, background: `radial-gradient(circle at 35% 30%, #fff8, ${me.color})`, boxShadow: `0 20px 60px ${me.color}88`, fontSize: '90px', touchAction: 'manipulation' },
       onpointerdown: (e) => { e.preventDefault(); net.send({ type: 'tap', id }); vibrate(8); b.animate([{ transform: 'scale(.94)' }, { transform: 'scale(1)' }], { duration: 120 }); } }, me.emoji);
-    wrap.replaceChildren(h('div.big-msg', msg), b, h('p.muted', 'Tape aussi vite que possible !'));
+    wrap.replaceChildren(h('div.big-msg', msg), b, h('p.muted', 'Regarde le grand écran et tape ici.'));
   };
   net.on((m) => {
     if (m.type === 'welcome' && m.id === id) { me = m; wrap.replaceChildren(h('div', { style: { fontSize: '90px' } }, m.emoji), h('div.big-msg', 'C’est bon !'), h('p.muted', 'Regarde le grand écran, la course va commencer.')); vibrate(30); }
     if (!me) return;
-    if (m.type === 'state' && m.phase === 'race') pad('GO !');
+    if (m.type === 'state' && m.phase === 'play') pad(m.label || 'GO !');
     if (m.type === 'state' && m.phase === 'countdown') wrap.replaceChildren(h('div.countdown', '3…'));
-    if (m.type === 'result') wrap.replaceChildren(h('div', { style: { fontSize: '90px' } }, m.winner === id ? '🏆' : '😅'), h('div.big-msg', m.winner === id ? 'Tu as gagné !' : `${m.name} a gagné`), h('p.muted', 'Une revanche se lance depuis le grand écran.'));
+    if (m.type === 'state' && m.phase === 'pause') wrap.replaceChildren(h('div', { style: { fontSize: '70px' } }, me.emoji), h('div.big-msg', m.text || 'Regarde l’écran'), h('p.muted', 'Garde ce téléphone en main.'));
+    if (m.type === 'result') wrap.replaceChildren(h('div', { style: { fontSize: '90px' } }, m.winner === id ? '🏆' : '😅'), h('div.big-msg', m.winner === id ? 'Tu as gagné !' : `${m.name} a gagné`), h('p.muted', 'La suite se passe sur le grand écran.'));
   });
   net.send({ type: 'hello', id });
   join();
