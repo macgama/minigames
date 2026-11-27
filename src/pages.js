@@ -7,6 +7,8 @@ import { OFFERS, isPremium, hasPass, passUntil, activatePremium, activatePass, c
 import { dayNumber } from './core/rng.js';
 import { toast, confetti } from './core/fx.js';
 import { installPrompt } from './pwa.js';
+import { profile, saveProfile, streak, dailyQuests, questLabel, questGoal, bestMedal, MEDALS, medalCount, ACHIEVEMENTS, unlockedAchievements, AVATARS } from './core/progress.js';
+import { byId } from './games/index.js';
 
 function topbar() {
   const prem = isPremium();
@@ -14,7 +16,7 @@ function topbar() {
     h('a.logo', { href: '#/' }, h('span.logo-mark', { html: icon('logo') }), h('span.name', 'Minigames', h('small.by', 'par Manigames'))),
     h('div.spacer'),
     installPrompt.available() && h('button.btn.btn-sm.hide-sm', { onclick: () => installPrompt.prompt(), html: icon('download', 18) + ' Installer' }),
-    h('a.btn.btn-sm.btn-ghost', { href: '#/stats', html: icon('chart', 18) + '<span class="hide-sm">Stats</span>', 'aria-label': 'Statistiques' }),
+    (() => { const p = profile(); const s = streak(); return h('a.btn.btn-sm.btn-ghost', { href: '#/profil', 'aria-label': 'Mon profil' }, h('span', { style: { fontSize: '20px' } }, p.avatar), h('span', `Niv. ${p.lvl}`), s.n > 0 && h('span.hide-sm', `🔥${s.n}`)); })(),
     h('a.chip.chip-premium', { href: '#/premium', style: { textDecoration: 'none', height: '36px' } }, prem ? '★ Premium' : '★ Premium')));
 }
 
@@ -24,7 +26,8 @@ function gameCard(g, i) {
     h('div.game-art',
       h('span.num', String(g.num).padStart(2, '0')),
       h('div.badges', g.premium === 'pass' && h('span.chip', '🎟️', h('span.lbl', ' Pass')), g.cat.includes('enligne') && h('span.chip', '🛰️', h('span.lbl', ' En ligne'))),
-      h('span.emoji', { 'aria-hidden': 'true' }, g.emoji)),
+      h('span.emoji', { 'aria-hidden': 'true' }, g.emoji),
+      bestMedal(g.id) > 0 && h('span.medal-mini', { title: 'Meilleure médaille' }, MEDALS[bestMedal(g.id) - 1].icon)),
     h('div.game-body',
       h('h3', g.title), h('p', g.tagline),
       h('div.game-meta', h('span.chip', '⏱ ' + g.duration), h('span.chip', '👤 ' + g.players), best && h('span.chip.game-best', '★ ' + best.display))));
@@ -52,6 +55,7 @@ export function home(root) {
           h('a.btn.btn-primary.btn-lg', { href: '#/jeu/daily-defi' }, `📅 Défi du jour #${dayNumber()}`),
           h('a.btn.btn-lg', { href: '#/jeu/mode-fete' }, '🎉 Mode Fête')),
         h('div.hero-stats', h('div', h('b', '20'), 'mini-jeux gratuits'), h('div', h('b', '0'), 'publicité'), h('div', h('b', plays), plays > 1 ? 'parties jouées' : 'partie jouée'))),
+      dashboard(),
       h('div.featured',
         h('a.feature-card', { href: '#/jeu/dix-secondes', style: { background: 'linear-gradient(135deg,#ffb547,#ff4f4f 70%)' } },
           h('span.big-emoji', '⏱️'), h('span.kicker', 'Le plus partagé'), h('h3', '10 Secondes Pile'), h('p', 'Arrête le chrono à 10,00 s. Personne n’y arrive du premier coup.')),
@@ -65,7 +69,7 @@ export function home(root) {
       h('section',
         h('div.section-head', h('h2', 'Aller plus loin'), h('p.muted', 'Zéro pub, pour toujours. Tous les jeux restent gratuits en ligne.')),
         offers()),
-      h('footer.footer', h('p', 'Minigames, une plateforme Manigames · prototype · ', h('a', { href: '#/premium' }, 'Offres'), ' · ', h('a', { href: '#/stats' }, 'Statistiques')))));
+      h('footer.footer', h('p', 'Minigames, une plateforme Manigames · prototype · ', h('a', { href: '#/premium' }, 'Offres'), ' · ', h('a', { href: '#/profil' }, 'Profil')))));
   paint();
 }
 
@@ -108,23 +112,51 @@ export function premiumPage(root) {
       h('button.btn.btn-sm', { onclick: () => { cancelPremium(); cancelPass(); toast('Offres réinitialisées'); route(); } }, 'Réinitialiser la démo'))));
 }
 
-export function statsPage(root) {
-  document.title = 'Statistiques · Minigames';
-  const rows = GAMES.map((g) => ({ g, best: getBest(g.id), plays: store.get('plays:' + g.id, 0) }));
-  const played = rows.filter((r) => r.plays);
+/** Profil + quêtes du jour, en haut de l'accueil. */
+function dashboard() {
+  const p = profile(); const s = streak(); const q = dailyQuests(GAMES);
+  const mc = medalCount(GAMES.map((g) => g.id));
+  const doneN = q.list.filter((x) => x.done).length;
+  return h('div.dash',
+    h('a.panel.profile-card', { href: '#/profil', style: { textDecoration: 'none' } },
+      h('div.profile-top', h('span.avatar', p.avatar), h('div.who', h('b', p.name || 'Choisis ton pseudo'), h('span.muted', `Niveau ${p.lvl} · ${p.title}`))),
+      h('div', h('div.bar.xp-bar', h('i', { style: { width: (p.pct * 100) + '%' } })), h('small.faint', `${p.into} / ${p.need} XP avant le niveau ${p.lvl + 1}`)),
+      h('div.stat-row', h('span.chip', s.n > 0 ? `🔥 ${s.n} jour${s.n > 1 ? 's' : ''} de suite` : '🔥 Lance ta série'), MEDALS.map((m, i) => h('span.chip', `${m.icon} ${mc[i]}`)))),
+    h('div.panel.quests-card',
+      h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '10px' } }, h('b', { style: { fontSize: '18px' } }, '📜 Quêtes du jour'), h('span.faint', `${doneN}/3`)),
+      q.list.map((it) => h('div.quest', { class: it.done ? 'done' : '' }, h('span', questLabel(it, byId)), h('span.xp', it.done ? '✔' : `+${it.xp} XP`),
+        h('div.bar', h('i', { style: { width: Math.min(100, (it.p / questGoal(it)) * 100) + '%' } })))),
+      h('small.faint', s.playedToday ? 'Nouvelles quêtes demain à minuit.' : 'Joue aujourd’hui pour garder ta série 🔥')));
+}
+
+export function profilePage(root) {
+  document.title = 'Profil · Minigames';
+  const p = profile(); const s = streak(); const ach = unlockedAchievements();
+  const featDefs = store.get('featdefs', {});
+  const all = [...ACHIEVEMENTS.map((a) => ({ ...a })), ...GAMES.flatMap((g) => Object.entries(g.feats || {}).map(([k, d]) => ({ id: g.id + ':' + k, ...d, game: g.title })))];
+  void featDefs;
+  const nameIn = h('input.input#pseudo', { value: p.name, maxLength: 16, placeholder: 'Ton pseudo', style: { flex: 1, minWidth: 0 } });
+  const rows = GAMES.map((g) => ({ g, best: getBest(g.id), plays: store.get('plays:' + g.id, 0), m: bestMedal(g.id) }));
   const total = rows.reduce((n, r) => n + r.plays, 0);
-  const prem = isPremium();
   clear(root).append(topbar(), h('div.container.page',
     h('a.back-link', { href: '#/', html: icon('back', 18) + ' Tous les jeux' }),
-    h('h1', 'Tes statistiques'),
-    h('p.muted', { style: { marginBottom: '24px' } }, `${total} partie${total > 1 ? 's' : ''} sur ${played.length} jeu${played.length > 1 ? 'x' : ''}. Tout reste sur ton appareil.`),
-    h('div.games-grid', { style: { gridTemplateColumns: 'repeat(auto-fill,minmax(min(100%,220px),1fr))' } },
-      (played.length ? played : rows.slice(0, 4)).map(({ g, best, plays }) => h('a.panel', { href: '#/jeu/' + g.id, style: { padding: '16px', textDecoration: 'none', display: 'flex', gap: '14px', alignItems: 'center' } },
-        h('span', { style: { fontSize: '34px' } }, g.emoji),
-        h('div', h('b', g.title), h('div.muted', { style: { fontSize: '14px' } }, best ? `Record ${best.display} · ${plays} partie${plays > 1 ? 's' : ''}` : 'Pas encore joué'))))),
-    h('div.panel.lock-card', { style: { marginTop: '24px' } },
-      h('span.icon', prem ? '📈' : '🔒'),
-      h('div', { style: { flex: 1 } }, h('b', prem ? 'Statistiques avancées (Premium)' : 'Statistiques avancées'),
-        h('p.muted', { style: { fontSize: '14px' } }, prem ? 'Courbes de progression, temps de réaction moyen, comparaison avec tes amis : à venir dans la version complète.' : 'Progression dans le temps, comparaison avec tes amis et historique complet avec Premium.')),
-      !prem && h('a.btn.btn-sm.btn-primary', { href: '#/premium' }, 'Débloquer'))));
+    h('div.profile-top', { style: { marginBottom: '18px' } }, h('span.avatar', { style: { width: '84px', height: '84px', fontSize: '50px' } }, p.avatar),
+      h('div.who', h('h1', { style: { margin: 0 } }, p.name || 'Joueur·se mystère'), h('span.muted', `Niveau ${p.lvl} · ${p.title} · ${p.xp} XP · ${total} parties · record de série ${s.best} jour${s.best > 1 ? 's' : ''}`))),
+    h('section.panel', { style: { padding: '20px', display: 'grid', gap: '14px' } },
+      h('h2', { style: { fontSize: '22px' } }, 'Pseudo et avatar'),
+      h('div', { style: { display: 'flex', gap: '8px' } }, nameIn, h('button.btn.btn-primary', { onclick: () => { saveProfile({ name: nameIn.value.trim() }); toast('Pseudo enregistré'); route(); } }, 'Enregistrer')),
+      h('p.faint', 'Les avatars se débloquent en montant de niveau.'),
+      h('div.avatar-grid', AVATARS.map((a) => h('button', { 'aria-pressed': String(a.e === p.avatar), disabled: p.lvl < a.lvl, 'data-lvl': 'Niv. ' + a.lvl, 'aria-label': p.lvl < a.lvl ? `Avatar verrouillé, niveau ${a.lvl}` : `Choisir ${a.e}`, onclick: () => { saveProfile({ avatar: a.e }); route(); } }, a.e)))),
+    h('section', h('div.section-head', h('h2', 'Médailles'), h('p.muted', 'Bronze, argent, or, platine : vise le sommet dans chaque jeu.')),
+      h('div.games-grid', { style: { gridTemplateColumns: 'repeat(auto-fill,minmax(min(100%,230px),1fr))' } },
+        rows.map(({ g, best, plays, m }) => h('a.panel', { href: '#/jeu/' + g.id, style: { padding: '14px', textDecoration: 'none', display: 'flex', gap: '12px', alignItems: 'center' } },
+          h('span', { style: { fontSize: '32px' } }, g.emoji),
+          h('div', { style: { flex: 1, minWidth: 0 } }, h('b', g.title), h('div.muted', { style: { fontSize: '13px' } }, best ? `Record ${best.display} · ${plays} partie${plays > 1 ? 's' : ''}` : plays ? `${plays} partie${plays > 1 ? 's' : ''}` : 'Pas encore joué')),
+          h('span', { style: { fontSize: '26px', opacity: m ? 1 : 0.25 } }, m ? MEDALS[m - 1].icon : '🏅'))))),
+    h('section', h('div.section-head', h('h2', `Succès (${all.filter((a) => ach[a.id]).length}/${all.length})`)),
+      h('div.ach-grid', all.map((a) => h('div.ach', { class: ach[a.id] ? '' : 'locked' }, h('span', a.icon), h('div', h('b', a.name), h('small', a.desc + (a.game ? ` · ${a.game}` : ''))))))),
+    h('div.panel.lock-card', { style: { marginTop: '8px' } },
+      h('span.icon', isPremium() ? '📈' : '🔒'),
+      h('div', { style: { flex: 1 } }, h('b', 'Statistiques avancées'), h('p.muted', { style: { fontSize: '14px' } }, 'Courbes de progression et comparaison avec tes amis, avec Premium.')),
+      !isPremium() && h('a.btn.btn-sm.btn-primary', { href: '#/premium' }, 'Débloquer'))));
 }

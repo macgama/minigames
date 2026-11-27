@@ -178,3 +178,57 @@ section { margin-bottom: 48px; }
   .game-meta .chip { height: 22px; font-size: 11px; padding: 0 7px; }
   .hero .btn-row .btn { flex: 1 1 auto; }
 }
+
+/* ---------- Progression : médailles, XP, succès, défis ---------- */
+.medal-row { display: flex; justify-content: center; gap: 10px; }
+.medal { display: grid; justify-items: center; gap: 2px; min-width: 58px; padding: 8px 6px; border-radius: 14px; background: rgba(255, 255, 255, 0.04); border: 1px solid var(--border); opacity: 0.45; filter: grayscale(1); transition: all 0.3s; }
+.medal.on { opacity: 1; filter: none; border-color: var(--mc); box-shadow: 0 0 18px color-mix(in srgb, var(--mc) 40%, transparent); background: color-mix(in srgb, var(--mc) 14%, transparent); }
+.medal .mi { font-size: 26px; line-height: 1; }
+.medal small { font-size: 11px; color: var(--text-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.medal-block { display: grid; gap: 8px; }
+.next-medal { font-weight: 700; color: var(--warn); font-size: 15px; }
+.challenge-banner { display: flex; gap: 12px; align-items: center; text-align: left; padding: 12px 16px; border-radius: 16px; background: linear-gradient(120deg, rgba(255, 79, 163, 0.18), rgba(124, 92, 255, 0.18)); border: 1px solid rgba(255, 79, 163, 0.45); }
+.challenge-banner > span { font-size: 30px; }
+.challenge-banner.won { background: rgba(61, 220, 151, 0.15); border-color: rgba(61, 220, 151, 0.5); }
+.challenge-banner.lost { background: rgba(255, 92, 122, 0.12); border-color: rgba(255, 92, 122, 0.4); }
+.xp-block { display: grid; gap: 6px; text-align: left; padding: 12px 14px; border-radius: 16px; background: rgba(255, 255, 255, 0.04); border: 1px solid var(--border); }
+.xp-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.xp-head b { color: var(--brand-3); font-size: 18px; }
+.xp-bar > i { background: linear-gradient(90deg, var(--brand-3), var(--brand-2)); }
+.xp-lines { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; color: var(--text-3); }
+.levelup { font-weight: 800; font-size: 18px; color: #fff; padding: 10px; border-radius: 14px; background: var(--brand-grad); }
+.ach-list { display: grid; gap: 8px; }
+.ach { display: flex; gap: 12px; align-items: center; text-align: left; padding: 10px 12px; border-radius: 14px; background: rgba(255, 200, 87, 0.1); border: 1px solid rgba(255, 200, 87, 0.4); }
+.ach > span { font-size: 28px; }
+.ach small { display: block; color: var(--text-2); }
+.quest-done { color: var(--ok); font-weight: 700; }
+.challenge-send { display: flex; gap: 8px; }
+.card.results { gap: 14px; max-width: 520px; }
+.pop-text { position: absolute; z-index: 12; font-weight: 900; pointer-events: none; transform: translate(-50%, -50%); text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6); animation: pop-up 0.9s var(--ease) forwards; white-space: nowrap; }
+@keyframes pop-up { 0% { opacity: 0; transform: translate(-50%, -30%) scale(0.6); } 20% { opacity: 1; transform: translate(-50%, -50%) scale(1.15); } 100% { opacity: 0; transform: translate(-50%, -160%) scale(1); } }
+.flash { position: absolute; inset: 0; z-index: 11; pointer-events: none; animation: fade-out 0.35s forwards; }
+@keyframes fade-out { to { opacity: 0; } }
+
+/* ---------- Profil, quêtes (accueil) ---------- */
+.dash { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 16px; margin-bottom: 36px; }
+.profile-card { padding: 20px; display: grid; gap: 14px; }
+.profile-top { display: flex; gap: 14px; align-items: center; }
+.avatar { width: 64px; height: 64px; border-radius: 20px; display: grid; place-items: center; font-size: 38px; background: var(--brand-grad); box-shadow: 0 10px 30px rgba(255, 79, 163, 0.3); flex: none; border: 0; }
+.profile-top .who { flex: 1; min-width: 0; }
+.profile-top .who b { font-size: 20px; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.stat-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.quests-card { padding: 20px; display: grid; gap: 12px; align-content: start; }
+.quest { display: grid; grid-template-columns: 1fr auto; gap: 6px 10px; align-items: center; }
+.quest .bar { grid-column: 1 / -1; height: 6px; }
+.quest.done span:first-child { text-decoration: line-through; color: var(--text-3); }
+.quest .xp { font-size: 13px; font-weight: 700; color: var(--brand-3); }
+.medal-mini { position: absolute; left: 12px; bottom: 10px; z-index: 1; font-size: 22px; filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.5)); }
+.avatar-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(56px, 1fr)); gap: 8px; }
+.avatar-grid button { aspect-ratio: 1; border-radius: 16px; border: 1px solid var(--border); background: var(--surface); font-size: 30px; position: relative; }
+.avatar-grid button[aria-pressed='true'] { border-color: var(--brand-2); box-shadow: 0 0 0 2px var(--brand-2); }
+.avatar-grid button:disabled { opacity: 0.35; font-size: 0; }
+.avatar-grid button:disabled::after { content: '🔒 ' attr(data-lvl); font-size: 12px; position: absolute; inset: 0; display: grid; place-items: center; color: var(--text-2); }
+.ach-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr)); gap: 10px; }
+.ach.locked { background: var(--surface); border-color: var(--border); filter: grayscale(1); opacity: 0.55; }
+.overlay { grid-template-columns: minmax(0, 1fr); justify-items: center; }
+.overlay > .card { min-width: 0; }
